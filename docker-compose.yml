@@ -1,0 +1,24 @@
+services:
+  app:
+    image: app
+    build: .
+    container_name: app_praticando_devops
+    restart: always
+
+    depends_on:
+      - db
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: mensagens
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:

@@ -23,10 +23,10 @@ WORKDIR /app
 
 # Copia APENAS o .jar construído no estágio anterior para a imagem final.
 # O uso de '*.jar' torna o comando mais robusto a mudanças de versão.
-COPY --from=builder /app/target/*.jar app.jar
+COPY --from=builder /app/target/app.jar app.jar
 
 # Expõe a porta
 EXPOSE 8080
 
 # Comando para rodar a aplicação
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
