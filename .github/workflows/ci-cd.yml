@@ -10,6 +10,23 @@ jobs:
   # 2. Primeiro Job: Construir e Publicar a Imagem
   build-and-push:
     runs-on: ubuntu-latest
+
+    # Bloco que cria um container de PostgreSQL temporário para os testes
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: mensagens
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,7 +37,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      # Etapa de build que agora usa o banco de dados do 'services'
       - name: Build with Maven
+        env:
+          # Variavéis de ambiente que fazem o teste se conectar ao banco temporário
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/mensagens
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: postgres
         run: mvn clean install
 
       - name: Log in to GHCR
@@ -35,7 +58,6 @@ jobs:
         with:
           context: .
           push: true
-          # Usa o nome do seu repositório como nome da imagem
           tags: ghcr.io/${{ github.repository }}:latest
 
   # 3. Segundo Job: Fazer o Deploy no Servidor
