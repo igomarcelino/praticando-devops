@@ -1,0 +1,32 @@
+
+# ---- Estágio 1: Build ----
+# Usa uma imagem do Maven com Java 17 para construir o projeto
+FROM maven:3.8-openjdk-17 AS builder
+
+# Define o diretório de trabalho
+WORKDIR /app
+
+# Copia o pom.xml e baixa as dependências (otimiza o cache do Docker)
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Copia o resto do código-fonte e constrói o projeto. É aqui que o .jar é criado!
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# ---- Estágio 2: Final ----
+# Usa uma imagem leve, apenas com o ambiente de execução Java (JRE)
+FROM eclipse-temurin:17-jre-jammy
+
+# Define o diretório de trabalho
+WORKDIR /app
+
+# Copia APENAS o .jar construído no estágio anterior para a imagem final.
+# O uso de '*.jar' torna o comando mais robusto a mudanças de versão.
+COPY --from=builder /app/target/app.jar app.jar
+
+# Expõe a porta
+EXPOSE 8080
+
+# Comando para rodar a aplicação
+ENTRYPOINT ["java", "-jar", "app.jar"]
