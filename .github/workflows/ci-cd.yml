@@ -1,0 +1,66 @@
+name: CI/CD Pipeline
+
+# 1. O Gatilho (Trigger)
+# Roda a pipeline sempre que houver um push na branch 'main'
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # 2. Primeiro Job: Construir e Publicar a Imagem
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build with Maven
+        run: mvn clean install
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # Usa o nome do seu repositório como nome da imagem
+          tags: ghcr.io/${{ github.repository }}:latest
+
+  # 3. Segundo Job: Fazer o Deploy no Servidor
+  deploy:
+    runs-on: ubuntu-latest
+    # A palavra-chave 'needs' garante que este job só rode se o 'build-and-push' for um sucesso
+    needs: build-and-push
+    steps:
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Navega para a pasta do projeto no seu servidor
+            # !! IMPORTANTE: Troque este caminho pelo caminho real do seu projeto na VM !!
+            cd /home/geslucian1/estudo-devops
+            
+            # Login no GHCR com o Personal Access Token
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Puxa a imagem mais recente que acabamos de construir
+            docker pull ghcr.io/${{ github.repository }}:latest
+            
+            # Reinicia os serviços usando o docker-compose para usar a nova imagem
+            docker-compose down
+            docker-compose up -d

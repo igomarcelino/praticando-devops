@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import org.igomarcelino.praticando_devops.repository.MensagemRepository;
 
 @Entity
-@Table(name = "tbl_mensagem")
+@Table(name = "tbl_mensagens")
 public class Mensagem {
 
     @Id
