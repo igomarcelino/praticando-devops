@@ -75,7 +75,7 @@ jobs:
           script: |
             # Navega para a pasta do projeto no seu servidor
             # !! IMPORTANTE: Troque este caminho pelo caminho real do seu projeto na VM !!
-            cd /home/geslucian1/estudo-devops
+            cd /home/geslucian1/estudos-devops
             
             # Login no GHCR com o Personal Access Token
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
