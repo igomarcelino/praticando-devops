@@ -21,14 +21,15 @@ public class Mensagem {
         this.conteudo = conteudo;
     }
 
+    public Mensagem(String mensagem){
+        this.conteudo = mensagem;
+    }
+
 
     public Long getId_mensagem() {
         return id_mensagem;
     }
 
-    public void setId_mensagem(Long id_mensagem) {
-        this.id_mensagem = id_mensagem;
-    }
 
     public String getConteudo() {
         return conteudo;
