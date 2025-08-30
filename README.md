@@ -1,5 +1,8 @@
 # 🚀 Exercício Prático – DevOps com Spring Boot
 
+Este projeto visa aplicar na pratica como seria um processo de deploy e integração continua utilizando o github actions, para esse projeto foi utilizado uma vm alocada no Google Cloud Platform.
+Eu separei o projeto em tópicos para facilitar a aplicação do conceito.
+
 ## 📑 Checklist de Etapas
 
 - [ ]  Criar um projeto simples no Spring Initializr que utilize Web, JPA, Postgres
@@ -25,6 +28,8 @@
 
 ## 1️⃣ Criando o Projeto no Spring Initializr
 
+Para seguir nesse projeto vamos criar uma api simples e utilizar o github para versionar o nosso projeto, você pode criar a aplicação de sua preferência
+
 Projeto do GitHub:
 
 👉 [igomarcelino/praticando-devops](https://github.com/igomarcelino/praticando-devops)
@@ -34,6 +39,8 @@ O projeto está separado por **branches**.
 ---
 
 ## 2️⃣ Criando o `Dockerfile`
+
+Iremos criar o nosso Dockerfile, ele será responsável por criar um build de nossa aplicação, disponibilisando assim uma imagem docker para utilização
 
 ```docker
 # ---- Estágio 1: Build ----
@@ -51,11 +58,32 @@ COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app.jar"]
 
+
+```
+Para poder utilizar o ENTRYPOINT com o nome app.jar, podemos adicionar ao nosso pom.xml a seguinte configuração
+
+```xml
+    <build>
+		<finalName>app</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
 ```
 
 ---
 
 ## 3️⃣ Definindo Docker Compose
+
+Nesse projeto iremos ter dois docker-compose, um para desenvolvimento e outro para produção, dessa forma podemos subir o projeto tranquilamente tanto em ambiente de desenvolvimento quanto em produção
+Quando formos subir o nosso projeto em desenvolvimento podemos simplesmente utilizar o comando
+```text
+    docker compose -f docker-compose.yml up -d --build
+```
+Dessa forma ele ira buildar a imagem utilizando nosso Dockerfile.
 
 ### Desenvolvimento → `docker-compose.override.yml`
 
@@ -110,7 +138,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/mensagens
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
 
   db:
     image: postgres:15
@@ -120,8 +148,6 @@ services:
       POSTGRES_DB: mensagens
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
@@ -129,7 +155,7 @@ volumes:
   postgres-data:
 
 ```
-
+Em produção nao precisamos nos preocupar pois quem fará todo esse processo de build sera o Github Actions
 ---
 
 ## 4️⃣ Definindo o `nginx.conf`
@@ -148,57 +174,11 @@ server {
 }
 
 ```
-
+Essa será a configuração de nosso nginx.conf, ele será responsável por cuidar de nosso proxy reverso, sendo assim ele irá direcionar o fluxo que chegar pela porta 80 para a porta do spring :8080
 ---
 
-## 5️⃣ Preparando o Servidor
 
-- Instalar Docker
-
-```bash
-sudo apt update
-sudo apt install docker.io -y
-
-```
-
-- Instalar Docker Compose
-
-```bash
-sudo curl -L https://github.com/docker/compose/releases/download/1.25.3/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-docker-compose version
-
-```
-
-- Criar diretório e copiar arquivos (`docker-compose.yml`, `nginx.conf`)
-- Adicionar chave SSH para conexão com GitHub Actions
-
----
-
-## 6️⃣ Preparando o GitHub
-
-- Criar workflow `.github/workflows/ci-cd.yml`
-- Permitir **workflow write permissions** no repositório
-
-  ### Settings → Actions →General → Workflow permissions
-
-  📸 Exemplo :
-
-  ![image.png](https://github.com/igomarcelino/praticando-devops/blob/main/Screenshot%20from%202025-08-30%2012-53-06.png?raw=true)
-
-- Definir Secrets:
-    - `GHCR_PAT` → Token pessoal
-    - `SERVER_HOST` → IP do servidor
-    - `SERVER_USER` → Usuário SSH
-    - `SSH_PRIVATE_KEY` → Chave SSH privada
-
-📸 Exemplo das secrets:
-
-![image.png](https://github.com/igomarcelino/praticando-devops/blob/main/Screenshot%20from%202025-08-29%2018-15-39.png?raw=true)
-
----
-
-## 7️⃣ CI/CD – Workflow no GitHub Actions
+## CI/CD – Workflow no GitHub Actions Podemos então adicionar na raiz do nosso projeto o seguinte .yml, ele será responsável pelo processo de automatização ( workflow ) no Github Actions, iremos adicionar esse arquivo em .github/workflows
 
 ```yaml
 name: CI/CD Pipeline (Skip Tests)
@@ -247,9 +227,63 @@ jobs:
 
 ```
 
+
+
+## 5️⃣ Preparando o Servidor
+Nessa etapa precisamos realizar algumas configurações em nosso servidor, será necessário instalar o docker e o plugin do docker-compose
+
+- Instalar Docker
+
+```bash
+sudo apt update
+sudo apt install docker.io -y
+
+```
+
+- Instalar Docker Compose
+
+```bash
+sudo curl -L https://github.com/docker/compose/releases/download/1.25.3/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+docker-compose version
+
+```
+
+- Criar diretório e copiar arquivos (`docker-compose.yml`, `nginx.conf`)
+- Adicionar chave SSH para conexão com GitHub Actions
+
 ---
 
-## 8️⃣ Subindo e Testando
+## 6️⃣ Preparando o GitHub
+
+Com nosso projeto criado, servidor configurado podemos então seguir para a etapada de automatizar o nosso processo de deploy, então vamos seguir para a configuração de nosso GitHub Actions.
+
+- Criar workflow `.github/workflows/ci-cd.yml`
+- Permitir **workflow write permissions** no repositório
+
+  ### Settings → Actions →General → Workflow permissions
+
+  📸 Exemplo :
+
+  ![image.png](https://github.com/igomarcelino/praticando-devops/blob/main/Screenshot%20from%202025-08-30%2012-53-06.png?raw=true)
+
+- Definir Secrets:
+    - `GHCR_PAT` → Token pessoal
+    - `SERVER_HOST` → IP do servidor
+    - `SERVER_USER` → Usuário SSH
+    - `SSH_PRIVATE_KEY` → Chave SSH privada
+
+📸 Exemplo das secrets:
+
+![image.png](https://github.com/igomarcelino/praticando-devops/blob/main/Screenshot%20from%202025-08-29%2018-15-39.png?raw=true)
+
+---
+
+### Processo realizado podemos seguir para os testes do nosso novo fluxo de trabalho
+
+---
+
+## 7️⃣ Subindo e Testando
 
 - Fazer push para a branch `main`
 - Acompanhar workflow no GitHub Actions
