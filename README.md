@@ -184,7 +184,7 @@ docker-compose version
 
   📸 Exemplo :
 
-  ![image.png](attachment:9b2e3e88-88e5-43c4-81b8-e23313f888a3:image.png)
+  ![image.png](https://github.com/igomarcelino/praticando-devops/blob/main/Screenshot%20from%202025-08-30%2012-53-06.png?raw=true)
 
 - Definir Secrets:
     - `GHCR_PAT` → Token pessoal
@@ -194,7 +194,7 @@ docker-compose version
 
 📸 Exemplo das secrets:
 
-![image.png](attachment:da3f91f9-dce5-4eaa-b8e0-6afd1866fa91:image.png)
+![image.png](https://github.com/igomarcelino/praticando-devops/blob/main/Screenshot%20from%202025-08-29%2018-15-39.png?raw=true)
 
 ---
 
@@ -256,4 +256,4 @@ jobs:
 
 📸 Exemplo:
 
-![image.png](attachment:3e6ebad1-2577-4420-a3b3-ddb114b9d5e4:image.png)
+![image.png](https://github.com/igomarcelino/praticando-devops/blob/main/Screenshot%20from%202025-08-30%2001-19-28.png?raw=true)
